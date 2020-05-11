@@ -1,4 +1,5 @@
-FROM bde2020/hadoop-base:2.0.0-hadoop2.7.4-java8
+#FROM bde2020/hadoop-base:2.0.0-hadoop2.7.4-java8
+FROM dhanuka/hadoop:2.7.7 
 
 MAINTAINER Yiannis Mouchakis <gmouchakis@iit.demokritos.gr>
 MAINTAINER Ivan Ermilov <ivan.s.ermilov@gmail.com>
@@ -17,7 +18,14 @@ ENV HADOOP_HOME /opt/hadoop-$HADOOP_VERSION
 WORKDIR /opt
 
 #Install Hive and PostgreSQL JDBC
-RUN apt-get update && apt-get install -y wget procps && \
+
+#RUN deb [check-valid-until=no] http://archive.debian.org/debian jessie-backports main
+
+RUN apt-get update
+
+#UN apt-get update 
+
+RUN apt-get install -y wget procps && \
 	wget https://archive.apache.org/dist/hive/hive-$HIVE_VERSION/apache-hive-$HIVE_VERSION-bin.tar.gz && \
 	tar -xzvf apache-hive-$HIVE_VERSION-bin.tar.gz && \
 	mv apache-hive-$HIVE_VERSION-bin hive && \
@@ -31,14 +39,22 @@ RUN apt-get update && apt-get install -y wget procps && \
 #Spark should be compiled with Hive to be able to use it
 #hive-site.xml should be copied to $SPARK_HOME/conf folder
 
+#kdc client
+RUN apt-get update
+
+RUN apt-get install -y krb5-user libpam-krb5 libpam-ccreds
+
+RUN mkdir -p /etc/security/keytabs
+
+
 #Custom configuration goes here
-ADD conf/hive-site.xml $HIVE_HOME/conf
-ADD conf/beeline-log4j2.properties $HIVE_HOME/conf
-ADD conf/hive-env.sh $HIVE_HOME/conf
-ADD conf/hive-exec-log4j2.properties $HIVE_HOME/conf
-ADD conf/hive-log4j2.properties $HIVE_HOME/conf
-ADD conf/ivysettings.xml $HIVE_HOME/conf
-ADD conf/llap-daemon-log4j2.properties $HIVE_HOME/conf
+ADD hive/conf/hive-site.xml $HIVE_HOME/conf
+ADD hive/conf/beeline-log4j2.properties $HIVE_HOME/conf
+ADD hive/conf/hive-env.sh $HIVE_HOME/conf
+ADD hive/conf/hive-exec-log4j2.properties $HIVE_HOME/conf
+ADD hive/conf/hive-log4j2.properties $HIVE_HOME/conf
+ADD hive/conf/ivysettings.xml $HIVE_HOME/conf
+ADD hive/conf/llap-daemon-log4j2.properties $HIVE_HOME/conf
 
 COPY startup.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/startup.sh
@@ -48,6 +64,7 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 10000
 EXPOSE 10002
+EXPOSE 9083
 
 ENTRYPOINT ["entrypoint.sh"]
-CMD startup.sh
+
